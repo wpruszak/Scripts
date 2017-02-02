@@ -85,6 +85,8 @@ read_to_x_selection() {
     xclip -i > /dev/null 2>&1
 }
 
+# Asserts that command used for reading is
+# either echo or cat.
 assert_allowed_read_command() {
     [[ "$read_command" =~ ^(echo|cat)$ ]] || {
         error "Invalid read command: ${read_command}"
