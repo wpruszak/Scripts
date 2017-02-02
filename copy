@@ -1,0 +1,187 @@
+#!/usr/bin/env bash
+
+# Exit with 1 on pipe failure.
+set -o pipefail
+
+# Flags indicating which operation has to be executed.
+declare -i copy=1
+declare -i select=0
+declare -i from_file=1
+declare -i from_stdin=0
+
+# Filename for future use.
+declare filename=''
+
+# Command to use for reading data.
+declare read_command=''
+
+# Shows usage information.
+usage() {
+    cat <<EOF
+copy [OPTIONS] [FILE]
+copy [OPTIONS] [-n] [TEXT]
+Copies given file contents into clipboard.
+        -x: Select only (Read into X selection, middle mouse will paste then)
+        -c: Copy only (default)
+        -b: Copy and select
+        -f: From file (default)
+        -n: From stdin
+        -h: Show this help message
+EOF
+}
+
+# Stops script execution. Prints given error
+# message and exits with given exit code (default 1).
+#
+# $1 - Error message
+# $2 - Exit code
+error() {
+    echo "Error: ${1:-"Unknown error"}"
+    usage
+    exit ${2:-1}
+} >&2
+
+# Checks whether any argument was given.
+# If no arguments given, then will exit with
+# exit code 1.
+check_parameters() {
+    # If 0 arguments given, throw error.
+    [[ $# -eq 0 ]] && {
+        error "No arguments given"
+    }
+} >&2
+
+# Checks whether all requirements to run this script
+# are fulfilled.
+check_requirements() {
+    check_parameters "$@"
+
+    type xclip > /dev/null 2>&1 || {
+        error "xclip is not installed"
+    }
+} >&2
+
+# Checks if file exists, if not exits program execution.
+assert_file_exists() {
+#    # If number of arguments does not equal one (filename),
+#    # throw error.
+#    [[ $# -eq 1 ]] || {
+#        error "Given ${#} arguments. Expected 1 argument."
+#    }
+
+    # If file does not exist, throw error.
+    [[ -f "$*" ]] || {
+        error "File does not exist: '${*}'"
+    }
+} >&2
+
+# Read from stdin to clipboard.
+read_to_clipboard() {
+    xclip -selection clipboard > /dev/null 2>&1
+}
+
+# Read from stdin to X selection buffer.
+read_to_x_selection() {
+    xclip -i > /dev/null 2>&1
+}
+
+assert_allowed_read_command() {
+    [[ "$read_command" =~ ^(echo|cat)$ ]] || {
+        error "Invalid read command: ${read_command}"
+    }
+}
+
+# Copies file / stdin contents into flag dependent buffers.
+copy() {
+    assert_allowed_read_command
+
+    # Copy to clipboard.
+    [[ copy -eq 1 ]] && {
+        "$read_command" "$*" | read_to_clipboard
+    }
+
+    # Read into X selection buffer.
+    [[ select -eq 1 ]] && {
+        "$read_command" "$*" | read_to_x_selection
+    }
+} >&2
+
+# Sets all the flags. Shows help message if invoked with -h
+# option. If no parameters given will show error message
+# and exit the script.
+handle_parameters() {
+    # :hxcbfn
+    # :       - errors to /dev/null
+    #  hxcbfn - possible options without argument
+    while getopts ":hxcbfn" opt; do
+        case "$opt" in
+        h)
+            usage
+            exit 0
+            ;;
+        x)
+            copy=0
+            select=1
+            ;;
+        c)
+            # No need to change anything. This is the default behaviour.
+            ;;
+        b)
+            # copy=1 # Already set
+            select=1
+            ;;
+        f)
+            # No need to change anything. This is the default behaviour.
+            ;;
+        n)
+            from_file=0
+            from_stdin=1
+            ;;
+        :)
+            # Cannot happen for now, as no option takes
+            # argument for the time being.
+            error "Option -${OPTARG} is missing an argument"
+            ;;
+        \?)
+            error "Unknown option: -${OPTARG}"
+            ;;
+        esac
+    done
+} >&2
+
+# Make sure we are good to go and no library
+# is missing.
+check_requirements "$@"
+
+# Set all the flags / show help message.
+handle_parameters "$@"
+
+# Since `getopts` handled all the arguments, OPTIND
+# will contain index of the next argument to be processed.
+shift $(( OPTIND - 1 ))
+
+if [[ from_file -eq 1 ]]; then
+    # If file has spaces in its name, there are three ways to
+    # provide it as an argument:
+    # Example for file name equal 'random file.txt'
+    # #1 - quote its name ~~ copy 'random file.txt'
+    # #2 - escape space   ~~ copy random\ file.txt
+    # #3 - just write unescaped name ~~ copy random file.txt
+    #
+    # Now option #3 will break most scripts as 'random' and 'file.txt'
+    # will be seen as two different arguments. By using "$*" we can
+    # convert parameter array into single string.
+    # Having:
+    # $1 = 'random'
+    # $2 = 'file.txt'
+    # "$@" will result in 'random' 'file.txt'
+    # "$*" will result in 'random file.txt'
+    # That way we can escape non escaped file names.
+    assert_file_exists "$*"
+    read_command='cat'
+else
+    read_command='echo'
+fi
+
+# Finally - copy file / stdin into whatever was requested via options.
+copy "$*"
