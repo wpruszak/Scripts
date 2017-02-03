@@ -56,7 +56,7 @@ assert_bin_directory_is_fine "$BIN_DIR"
 
 # For each script, make it executable and link it to $BIN_DIR.
 for file in `ls "$DIR"`; do
-    # Skip readme, gitignore and this script.
+    # Skip readme, gitignore, cs (dev script) and this script.
     if [[ ! "$file" =~ $skip_regexp ]]; then
         # Make script executable.
         if ! chmod +x "${DIR}/${file}" > /dev/null >&2; then

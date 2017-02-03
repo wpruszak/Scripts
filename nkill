@@ -84,6 +84,7 @@ assert_signal() {
     # kill ~~ sends SIGTERM to all found processes
     # ps ax ~~ lists all processes
     # grep "$1" ~~ in this case $1 is the process name, therefore this will
+    # look for all processes with name matching the one provided
     # > /dev/null 2>&1 ~~ explained above
     kill `ps ax | grep "$1" | grep -vE 'grep|nkill' | awk '{ print $1 }'` > /dev/null 2>&1
 
