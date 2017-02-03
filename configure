@@ -14,7 +14,7 @@ declare -r SCRIPT_NAME=${0##*/}
 declare -r BIN_DIR=${1:-"$HOME/bin/"}
 
 # Files to skip.
-declare -r skip_regexp="^\.gitignore|README\.md|${SCRIPT_NAME}$"
+declare -r skip_regexp="^\.gitignore|README\.md|${SCRIPT_NAME}|cs$"
 
 # Stops script execution. Prints given error
 # message and exits with given exit code (default 1).
