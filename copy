@@ -162,6 +162,10 @@ handle_parameters "$@"
 # will contain index of the next argument to be processed.
 shift $(( OPTIND - 1 ))
 
+# Make sure that after shifting we are still above
+# required number of parameters.
+check_parameters "$@"
+
 if [[ from_file -eq 1 ]]; then
     # If file has spaces in its name, there are three ways to
     # provide it as an argument:
