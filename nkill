@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# Return 1 on pipe failure.
 set -o pipefail
 
 # Max columns on `kill -l` output.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Exit with 1 on pipe failure.
+# Return 1 on pipe failure.
 set -o pipefail
 
 # Flags indicating which operation has to be executed.
