@@ -1,2 +1,110 @@
 #!/usr/bin/env bash
 
+set -o pipefail
+
+# Max columns on `kill -l` output.
+declare -ir MAX_L_KILL_SIGNAL_COLUMNS=5
+
+# Shows usage information.
+usage() {
+    cat <<EOF
+nkill [NAME]
+nkill [SIGNAL] [NAME]
+Sends given signal to all processes matching name provided.
+If no signal provided, will send SIGTERM.
+EOF
+}
+
+# Stops script execution. Prints given error
+# message and exits with given exit code (default 1).
+#
+# $1 - Error message
+# $2 - Exit code
+error() {
+    echo "Error: ${1:-"Unknown error"}"
+    usage
+    exit ${2:-1}
+} >&2
+
+# Asserts the argument passed to this function equals 0.
+# As 0 is the success exit code for `kill` (and every
+# other normal command).
+assert_kill_succeeded() {
+    [[ $# -eq 0 ]] && { error 'Not enough arguments.'; }
+    [[ $# -gt 1 ]] && { error 'Too much arguments.'; }
+    [[ "$1" -eq 2 ]] && { error 'No processes found.' 2; }
+    [[ "$1" -ne 0 ]] && { error 'Unknown error.'; }
+}
+
+# Checks whether given argument indicates a signal,
+# that can be used with `kill` command.
+# Signals are represented by their name strings and
+# their ids, so this function has to match both.
+assert_signal() {
+
+    # Asserting just enough arguments.
+    [[ $# -eq 0 ]] && { error 'Not enough arguments.'; }
+    [[ $# -gt 1 ]] && { error 'Too much arguments.'; }
+
+    # Any number between 1 and 64 represents a valid signal.
+    if [[ "$1" =~ ^[0-9]+$ && "$1" -le 64 && "$1" -ge 1 ]]; then
+        return 0
+    fi
+
+    # If argument is not a signal ID, check if it can be matched to signal name.
+    # kill -l ~~ list signals
+    # cut -f "$i" | sed -E 's/\s*[0-9]*\)//' | sed '/^$/d' | sed -E 's/\s+//' ~~ remove
+    # any useless characters, that are not signal name
+    # grep -Fixq -- "$1" ~~ case insensitive match input string to each signal name
+    #  > /dev/null 2>&1 ~~ redirect stdout to /dev/null and stderr to stdout, effectively
+    # silencing all output
+    for (( i = 1; i <= MAX_L_KILL_SIGNAL_COLUMNS; i++ )); do
+        if kill -l | cut -f "$i" | sed -E 's/\s*[0-9]*\)//' | sed '/^$/d' | sed -E 's/\s+//' | grep -Fixq -- "$1" > /dev/null 2>&1
+        then
+            # Signal name matches.
+            return 0
+        fi
+    done
+
+    error 'Input string is not a signal.'
+} >&2
+
+# Assert argument number is fine.
+[[ $# -eq 0 ]] && { error 'Please, provide at least one argument.'; }
+[[ $# -gt 2 ]] && { error 'Too many arguments.'; }
+
+# No signal provided, defaults to sending SIGTERM to all processes with
+# name matching input string, effectively killing them. In case SIGTERM
+# will not do the job, reuse this command providing SIGKILL as a signal to use
+# for the job.
+[[ $# -eq 1 ]] && {
+    # Find all processes with names matching the name provided as an argument
+    # and send them a SIGTERM signal.
+    # kill ~~ sends SIGTERM to all found processes
+    # ps ax ~~ lists all processes
+    # grep "$1" ~~ in this case $1 is the process name, therefore this will
+    # > /dev/null 2>&1 ~~ explained above
+    kill `ps ax | grep "$1" | grep -vE 'grep|nkill' | awk '{ print $1 }'` > /dev/null 2>&1
+
+    # Make sure nothing wrong happened.
+    assert_kill_succeeded $?
+}
+
+# Two arguments - signal was provided.
+# Send given signal to all processes matching given name.
+[[ $# -eq 2 ]] && {
+    # Make sure given signal really exists.
+    if assert_signal $1; then
+        # Upper case given signal string.
+        upper_case_signal=`echo "$1" | tr '[:lower:]' '[:upper:]'`
+        # kill "-${upper_case_signal}" ~~ sends given signal to all found processes
+        # Rest of this is explained above.
+        kill "-${upper_case_signal}" `ps ax | grep "$2" | grep -vE 'grep|nkill' | awk '{ print $1 }'` > /dev/null 2>&1
+
+        # Make sure nothing wrong happened.
+        assert_kill_succeeded $?
+    fi
+}
+
+# Success.
+exit 0

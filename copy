@@ -192,4 +192,5 @@ fi
 # Finally - copy file / stdin into whatever was requested via options.
 copy "$*"
 
+# Successful return code.
 exit 0
