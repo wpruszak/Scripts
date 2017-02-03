@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+# This script will link all other scripts in this script directory
+# to location provided by user as a parameter. If no location will
+# be given, it will default to $HOME/bin.
+
+# This script directory.
+declare -r DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# This script file name.
+declare -r SCRIPT_NAME=${0##*/}
+
+# Bin directory.
+declare -r BIN_DIR=${1:-"$HOME/bin/"}
+
+# Files to skip.
+declare -r skip_regexp="^\.gitignore|README\.md|${SCRIPT_NAME}$"
+
+# Stops script execution. Prints given error
+# message and exits with given exit code (default 1).
+#
+# $1 - Error message
+# $2 - Exit code
+error() {
+    echo "Error: ${1:-"Unknown error."}"
+    exit ${2:-1}
+} >&2
+
+# Checks whether bin directory exists and is writable.
+# Will try to create bin directory and make it writable
+# if it did not exist / was not writable.
+assert_bin_directory_is_fine() {
+
+    # No argument.
+    [[ ! "$1" ]] && { error 'Missing argument'; }
+
+    # No directory, try creating it.
+    [[ ! -d "$1" ]] && {
+        if ! mkdir "$1" > /dev/null >&2; then
+            error "Cannot create bin directory - ${1}"
+        fi
+    }
+
+    # No write permissions, try to
+    # add the necessary permissions.
+    [[ ! -w "$1" ]] && {
+        if ! chmod -R +w "$1" > /dev/null >&2; then
+            error "Directory '${1}' is not writable"
+        fi
+    }
+} >&2
+
+# Before proceeding, make sure bin directory exists and
+# is writable.
+assert_bin_directory_is_fine "$BIN_DIR"
+
+# For each script, make it executable and link it to $BIN_DIR.
+for file in `ls "$DIR"`; do
+    # Skip readme, gitignore and this script.
+    if [[ ! "$file" =~ $skip_regexp ]]; then
+        # Make script executable.
+        if ! chmod +x "${DIR}/${file}" > /dev/null >&2; then
+            error "Cannot add execute rights to: '${DIR}/${file}'"
+        fi
+
+        # Link the script.
+        if ! ln -s "${DIR}/${file}" "${BIN_DIR}/${file}" > /dev/null >&2; then
+            error "Cannot link '${DIR}/${file}' to '${BIN_DIR}/${file}'"
+        fi
+    fi
+done
+
+# Success.
+exit 0
