@@ -91,7 +91,7 @@ assert_allowed_read_command() {
     [[ "$read_command" =~ ^(echo|cat)$ ]] || {
         error "Invalid read command: ${read_command}"
     }
-}
+} >&2
 
 # Copies file / stdin contents into flag dependent buffers.
 copy() {

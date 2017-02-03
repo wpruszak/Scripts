@@ -31,11 +31,11 @@ error() {
 # As 0 is the success exit code for `kill` (and every
 # other normal command).
 assert_kill_succeeded() {
-    [[ $# -eq 0 ]] && { error 'Not enough arguments.'; }
-    [[ $# -gt 1 ]] && { error 'Too much arguments.'; }
-    [[ "$1" -eq 2 ]] && { error 'No processes found.' 2; }
-    [[ "$1" -ne 0 ]] && { error 'Unknown error.'; }
-}
+    [[ $# -eq 0 ]] && { error 'Not enough arguments'; }
+    [[ $# -gt 1 ]] && { error 'Too much arguments'; }
+    [[ "$1" -eq 2 ]] && { error 'No processes found' 2; }
+    [[ "$1" -ne 0 ]] && { error 'Unknown error'; }
+} >&2
 
 # Checks whether given argument indicates a signal,
 # that can be used with `kill` command.
@@ -44,8 +44,8 @@ assert_kill_succeeded() {
 assert_signal() {
 
     # Asserting just enough arguments.
-    [[ $# -eq 0 ]] && { error 'Not enough arguments.'; }
-    [[ $# -gt 1 ]] && { error 'Too much arguments.'; }
+    [[ $# -eq 0 ]] && { error 'Not enough arguments'; }
+    [[ $# -gt 1 ]] && { error 'Too much arguments'; }
 
     # Any number between 1 and 64 represents a valid signal.
     if [[ "$1" =~ ^[0-9]+$ && "$1" -le 64 && "$1" -ge 1 ]]; then
@@ -67,12 +67,12 @@ assert_signal() {
         fi
     done
 
-    error 'Input string is not a signal.'
+    error 'Input string is not a signal'
 } >&2
 
 # Assert argument number is fine.
-[[ $# -eq 0 ]] && { error 'Please, provide at least one argument.'; }
-[[ $# -gt 2 ]] && { error 'Too many arguments.'; }
+[[ $# -eq 0 ]] && { error 'Please, provide at least one argument'; }
+[[ $# -gt 2 ]] && { error 'Too many arguments'; }
 
 # No signal provided, defaults to sending SIGTERM to all processes with
 # name matching input string, effectively killing them. In case SIGTERM
@@ -89,7 +89,7 @@ assert_signal() {
 
     # Make sure nothing wrong happened.
     assert_kill_succeeded $?
-}
+} >&2
 
 # Two arguments - signal was provided.
 # Send given signal to all processes matching given name.
@@ -105,7 +105,7 @@ assert_signal() {
         # Make sure nothing wrong happened.
         assert_kill_succeeded $?
     fi
-}
+} >&2
 
 # Success.
 exit 0
