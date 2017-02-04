@@ -2,7 +2,7 @@
 
 # Name kill. Sends signal to all processes with name matching
 # the one provided. If no signal given will send SIGTERM.
-# Example uses:
+# Example usage:
 #
 # nkill chrome   ~~ sends SIGTERM to all chrome processes.
 #                   With SIGTERM chrome will have time to

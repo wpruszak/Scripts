@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Copies into X clipboard / X selection.
-# Example uses:
+# Example usage:
 #
 # ps aux | copy      ~~ Copies whatever `ps aux` outputs.
 #

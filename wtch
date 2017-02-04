@@ -1,5 +1,25 @@
 #!/usr/bin/env bash
 
+# Watches everything that is being appended to the
+# end of the file. If provided with pattern, will filter
+# lines to only the ones matching pattern. Pattern must be
+# in POSIX extended regex format.
+# Example usage:
+#
+# wtch /var/log/apache2/error.log 'error|critical'
+#
+# Above command will output any errors / criticals that will
+# happen during this script execution. This could be useful for
+# live debugging, cause you could see what the error was right
+# after it happened.
+#
+# wtch /var/www/html/:symfony_project:/var/log/dev.log 'error|critical'
+#
+# Shows every symfony error / critical right after it happens.
+#
+# wtch file.txt
+# Watches file.txt for any appended lines.
+
 # Return 1 on pipe failure.
 set -o pipefail
 
@@ -7,9 +27,9 @@ set -o pipefail
 usage() {
     cat <<EOF
 wtch [FILE]
-wtch [PATTERN] [FILE]
+wtch [FILE] [PATTERN]
 Watches file for changes and outputs anything new
-to the stdout.
+to the stdout. Pattern can be any
 EOF
 }
 
@@ -24,10 +44,32 @@ error() {
     exit ${2:-1}
 } >&2
 
+# At least one argument needed.
+[[ $# -eq 0 ]] && { error 'Please, provide at least file name'; }
 # Maximum of two arguments allowed - pattern and file.
 [[ $# -gt 2 ]] && { error 'Too many arguments'; }
 
 # Pattern and file provided.
 [[ $# -eq 2 ]] && {
-
+    declare -r file="$1"
+    declare -r pattern="$2"
 }
+
+# Only file provided.
+[[ $# -eq 1 ]] && { declare -r file="$1"; }
+
+# Assert file is fine.
+[[ ! -e "$file" ]] && { error "File: '${file}' does not exist"; }
+[[ ! -f "$file" ]] && { error "File: '${file}' is not a regular file"; }
+[[ ! -r "$file" ]] && { error "File: '${file}' is not readable"; }
+
+# Either look for pattern in appended file lines, or just
+# follow whatever is appended to the end of the file.
+if [[ $# -eq 2 ]]; then
+    tail -f "$file" | grep --line-buffered -E "$pattern"
+else
+    tail -f "$file"
+fi
+
+# Probably never gets there.
+exit 0
