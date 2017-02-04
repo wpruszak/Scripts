@@ -12,7 +12,7 @@
 # its output to '/home/:user:/out.log'. Will also save error log to:
 # '/home/:user:/err.log'.
 #
-# rbg firefox                   ~~ Will run firefox in the background, giving you
+# rbg 'firefox'                 ~~ Will run firefox in the background, giving you
 #                                  control of the terminal back, also will silence
 #                                  any firefox terminal output.
 
