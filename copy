@@ -117,12 +117,12 @@ copy() {
     assert_allowed_read_command
 
     # Copy to clipboard.
-    [[ copy -eq 1 ]] && {
+    [[ "$copy" -eq 1 ]] && {
         "$read_command" "$*" | read_to_clipboard
     }
 
     # Read into X selection buffer.
-    [[ select -eq 1 ]] && {
+    [[ "$select" -eq 1 ]] && {
         "$read_command" "$*" | read_to_x_selection
     }
 } >&2
