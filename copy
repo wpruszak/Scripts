@@ -9,10 +9,10 @@
 #
 # copy -x < ~/file.txt  ~~ Copies 'file.txt' contents into X selection.
 #
-# copy file.txt      ~~ Copies 'file.txt' contents into
+# copy -f file.txt   ~~ Copies 'file.txt' contents into
 #                       X clipboard
 #
-# copy -b file.txt   ~~ Copies 'file.txt' contents into
+# copy -fb file.txt  ~~ Copies 'file.txt' contents into
 #                       X clipboard and X selection.
 #                       When copied to X selection, middle
 #                       mouse button pastes.
