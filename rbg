@@ -32,7 +32,7 @@ rbg [OPTIONS] [COMMAND]
 Runs command in the background, ignore SIGHUP's.
         -o [FILE]: Redirect stdout to the file provided
         -e [FILE]: Redirect stderr to the file provided
-        -n: Show notification that the command finished
+        -n: Show notification after command finishes
         -h: Show this help message
 EOF
 }
