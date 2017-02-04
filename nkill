@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 
+# Name kill. Sends signal to all processes with name matching
+# the one provided. If no signal given will send SIGTERM.
+# Example uses:
+#
+# nkill chrome   ~~ sends SIGTERM to all chrome processes.
+#                   With SIGTERM chrome will have time to
+#                   gracefully shutdown.
+# nkill 9 chrome ~~ sends SIGKILL to all chrome processes.
+#                   With SIGKILL chrome will just shutdown
+#                   immediately, without saving anything.
+#
+# In most cases you won't need to use any other signal than
+# SIGTERM(15) or SIGKILL(9), however for full list of signals
+# visit: http://www.linux.org/threads/kill-commands-and-signals.4423/
+# or run `kill -l`
+
 # Return 1 on pipe failure.
 set -o pipefail
 

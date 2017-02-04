@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+# Copies file contents into X clipboard / X selection.
+# Example uses:
+#
+# copy file.txt      ~~ Copies 'file.txt' contents into
+#                       X clipboard
+# copy -b file.txt   ~~ Copies 'file.txt' contents into
+#                       X clipboard and X selection.
+#                       When copied to X selection, middle
+#                       mouse button pastes.
+# copy -nx file.txt  ~~ Copies string 'file.txt' into X
+#                       selection.
+
 # Return 1 on pipe failure.
 set -o pipefail
 
