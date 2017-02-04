@@ -9,7 +9,7 @@
 #                       X clipboard and X selection.
 #                       When copied to X selection, middle
 #                       mouse button pastes.
-# copy -nx file.txt  ~~ Copies string 'file.txt' into X
+# copy -ax file.txt  ~~ Copies string 'file.txt' into X
 #                       selection.
 
 # Return 1 on pipe failure.
@@ -18,8 +18,8 @@ set -o pipefail
 # Flags indicating which operation has to be executed.
 declare -i copy=1
 declare -i select=0
-declare -i from_file=1
-declare -i from_stdin=0
+declare -i from_file=0
+declare -i from_arguments=0
 
 # Filename for future use.
 declare filename=''
@@ -31,13 +31,13 @@ declare read_command=''
 usage() {
     cat <<EOF
 copy [OPTIONS] [FILE]
-copy [OPTIONS] [-n] [TEXT]
-Copies given file contents into clipboard.
+copy [OPTIONS] [-a] [TEXT]
+Copies stdin into clipboard.
         -x: Select only (Read into X selection, middle mouse will paste then)
         -c: Copy only (default)
         -b: Copy and select
-        -f: From file (default)
-        -n: From stdin
+        -f: Copy from file
+        -a: Copy from arguments
         -h: Show this help message
 EOF
 }
@@ -56,7 +56,7 @@ error() {
 # Checks whether any argument was given.
 # If no arguments given, then will exit with
 # exit code 1.
-check_parameters() {
+check_arguments() {
     # If 0 arguments given, throw error.
     [[ $# -eq 0 ]] && {
         error "No arguments given"
@@ -66,8 +66,7 @@ check_parameters() {
 # Checks whether all requirements to run this script
 # are fulfilled.
 check_requirements() {
-    check_parameters "$@"
-
+    # If xclip is not installed, show error.
     type xclip > /dev/null 2>&1 || {
         error "xclip is not installed"
     }
@@ -87,12 +86,12 @@ assert_file_exists() {
     }
 } >&2
 
-# Read from stdin to clipboard.
+# Read from arguments to clipboard.
 read_to_clipboard() {
     xclip -selection clipboard > /dev/null 2>&1
 }
 
-# Read from stdin to X selection buffer.
+# Read from arguments to X selection buffer.
 read_to_x_selection() {
     xclip -i > /dev/null 2>&1
 }
@@ -105,7 +104,7 @@ assert_allowed_read_command() {
     }
 } >&2
 
-# Copies file / stdin contents into flag dependent buffers.
+# Copies file / arguments contents into flag dependent buffers.
 copy() {
     assert_allowed_read_command
 
@@ -124,10 +123,10 @@ copy() {
 # option. If no parameters given will show error message
 # and exit the script.
 handle_parameters() {
-    # :hxcbfn
+    # :hxcbfa
     # :       - errors to /dev/null
-    #  hxcbfn - possible options without argument
-    while getopts ":hxcbfn" opt; do
+    #  hxcbfa - possible options without argument
+    while getopts ":hxcbfa" opt; do
         case "$opt" in
         h)
             usage
@@ -145,11 +144,10 @@ handle_parameters() {
             select=1
             ;;
         f)
-            # No need to change anything. This is the default behaviour.
+            from_file=1
             ;;
-        n)
-            from_file=0
-            from_stdin=1
+        a)
+            from_arguments=1
             ;;
         :)
             # Cannot happen for now, as no option takes
@@ -163,9 +161,20 @@ handle_parameters() {
     done
 } >&2
 
+# Reads and outputs from stdin.
+read_stdin() {
+    # Preserve whitespace.
+    IFS=''
+    while read line; do
+        if [[ ! -z "$line" ]]; then
+            echo "$line" 2> /dev/null
+        fi
+    done
+}
+
 # Make sure we are good to go and no library
 # is missing.
-check_requirements "$@"
+check_requirements
 
 # Set all the flags / show help message.
 handle_parameters "$@"
@@ -174,11 +183,15 @@ handle_parameters "$@"
 # will contain index of the next argument to be processed.
 shift $(( OPTIND - 1 ))
 
-# Make sure that after shifting we are still above
-# required number of parameters.
-check_parameters "$@"
+# If reading from stdin.
+if [[ "$from_file" -eq 0 && "$from_arguments" -eq 0 ]]; then
 
-if [[ from_file -eq 1 ]]; then
+    # Read whatever was given via pipe / stdin redirection.
+    declare -r read_from_stdin=`read_stdin`
+    read_command='echo'
+    copy "$read_from_stdin"
+
+elif [[ "$from_file" -eq 1 ]]; then
     # If file has spaces in its name, there are three ways to
     # provide it as an argument:
     # Example for file name equal 'random file.txt'
@@ -195,14 +208,15 @@ if [[ from_file -eq 1 ]]; then
     # "$@" will result in 'random' 'file.txt'
     # "$*" will result in 'random file.txt'
     # That way we can escape non escaped file names.
+    check_arguments "$@"
     assert_file_exists "$*"
     read_command='cat'
+    copy "$*"
 else
+    check_arguments "$@"
     read_command='echo'
+    copy "$*"
 fi
-
-# Finally - copy file / stdin into whatever was requested via options.
-copy "$*"
 
 # Successful return code.
 exit 0
