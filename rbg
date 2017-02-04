@@ -6,11 +6,12 @@
 # rbg 'some_kind_of_server'     ~~ Runs the server in the background and silences
 #                                  its output.
 #
-# rbg 'long_running_command' -o /home/:user:/out.log -e /home/:user:/err.log
+# rbg -n -o /home/:user:/out.log -e /home/:user:/err.log 'long_running_command'
 #
 # Above example will run `long running command` in the background and save
 # its output to '/home/:user:/out.log'. Will also save error log to:
-# '/home/:user:/err.log'.
+# '/home/:user:/err.log'. After command finishes running, will show notification
+# indicating so.
 #
 # rbg 'firefox'                 ~~ Will run firefox in the background, giving you
 #                                  control of the terminal back, also will silence
