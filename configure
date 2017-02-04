@@ -36,7 +36,7 @@ assert_bin_directory_is_fine() {
 
     # No directory, try creating it.
     [[ ! -d "$1" ]] && {
-        if ! mkdir "$1" > /dev/null >&2; then
+        if ! mkdir "$1" > /dev/null 2>&1; then
             error "Cannot create bin directory - ${1}"
         fi
     }
@@ -44,7 +44,7 @@ assert_bin_directory_is_fine() {
     # No write permissions, try to
     # add the necessary permissions.
     [[ ! -w "$1" ]] && {
-        if ! chmod -R +w "$1" > /dev/null >&2; then
+        if ! chmod -R +w "$1" > /dev/null 2>&1; then
             error "Directory '${1}' is not writable"
         fi
     }
@@ -59,15 +59,15 @@ for file in `ls "$DIR"`; do
     # Skip readme, gitignore, cs (dev script) and this script.
     if [[ ! "$file" =~ $skip_regexp ]]; then
         # Make script executable.
-        if ! chmod +x "${DIR}/${file}" > /dev/null >&2; then
+        if ! chmod +x "${DIR}/${file}" > /dev/null 2>&1; then
             error "Cannot add execute rights to: '${DIR}/${file}'"
         fi
 
         # Remove previous link, and create a new one.
-        unlink "${BIN_DIR}/${file}" > /dev/null >&2;
+        unlink "${BIN_DIR}/${file}" > /dev/null 2>&1;
 
         # Link the script.
-        if ! ln -s "${DIR}/${file}" "${BIN_DIR}/${file}" > /dev/null >&2; then
+        if ! ln -s "${DIR}/${file}" "${BIN_DIR}/${file}" > /dev/null 2>&1; then
             error "Cannot link '${DIR}/${file}' to '${BIN_DIR}/${file}'"
         fi
     fi
