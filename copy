@@ -40,7 +40,7 @@ usage() {
     cat <<EOF
 copy [OPTIONS] [FILE]
 copy [OPTIONS] [-a] [TEXT]
-Copies stdin into clipboard.
+Copies into clipboard. Defaults to copying stdin into clipboard, this behaviour is changeable via use of [-f] and [-a] options.
         -x: Select only (Read into X selection, middle mouse will paste then)
         -c: Copy only (default)
         -b: Copy and select
