@@ -3,12 +3,20 @@
 # Copies file contents into X clipboard / X selection.
 # Example uses:
 #
+# ps aux | copy      ~~ Copies whatever `ps aux` outputs.
+#
+# ssh user@host 'command' | copy ~~ Copies remote command output.
+#
+# copy -x < ~/file.txt  ~~ Copies 'file.txt' contents into X selection.
+#
 # copy file.txt      ~~ Copies 'file.txt' contents into
 #                       X clipboard
+#
 # copy -b file.txt   ~~ Copies 'file.txt' contents into
 #                       X clipboard and X selection.
 #                       When copied to X selection, middle
 #                       mouse button pastes.
+#
 # copy -ax file.txt  ~~ Copies string 'file.txt' into X
 #                       selection.
 
