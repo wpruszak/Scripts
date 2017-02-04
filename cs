@@ -5,8 +5,7 @@
 # If first argument not provided.
 [[ ! $1 ]] && { echo 'Missing argument'; exit 1; }
 
-#declare -r bindir="$HOME/bin"
-declare -r bindir='/home/setzo/Repos/Scripts'
+declare -r bindir="$HOME/bin"
 
 # If bin directory does not exist.
 if [[ ! -d "$bindir" ]]; then
