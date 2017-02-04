@@ -63,6 +63,9 @@ for file in `ls "$DIR"`; do
             error "Cannot add execute rights to: '${DIR}/${file}'"
         fi
 
+        # Remove previous link, and create a new one.
+        unlink "${BIN_DIR}/${file}" > /dev/null >&2;
+
         # Link the script.
         if ! ln -s "${DIR}/${file}" "${BIN_DIR}/${file}" > /dev/null >&2; then
             error "Cannot link '${DIR}/${file}' to '${BIN_DIR}/${file}'"
