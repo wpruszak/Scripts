@@ -64,7 +64,8 @@ assert_signal() {
     [[ $# -gt 1 ]] && { error 'Too much arguments'; }
 
     # Any number between 1 and 64 represents a valid signal.
-    if [[ "$1" =~ ^[0-9]+$ && "$1" -le 64 && "$1" -ge 1 ]]; then
+    # Any number starting with 0 is in octal format, so skip those.
+    if [[ "$1" =~ ^[1-9][0-9]*$ && "$1" -le 64 && "$1" -ge 1 ]]; then
         return 0
     fi
 
