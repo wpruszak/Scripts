@@ -20,6 +20,11 @@
 declare STDOUT_REDIRECTION_PATH='/dev/null'
 declare STDERR_REDIRECTION_PATH='/dev/null'
 
+# Notification specific variables.
+declare -i show_notifications=0
+declare notification_success=''
+declare notification_error=''
+
 # Shows usage information.
 usage() {
     cat <<EOF
@@ -27,6 +32,7 @@ rbg [OPTIONS] [COMMAND]
 Runs command in the background, ignore SIGHUP's.
         -o [FILE]: Redirect stdout to the file provided
         -e [FILE]: Redirect stderr to the file provided
+        -n: Show notification that the command finished
         -h: Show this help message
 EOF
 }
@@ -67,8 +73,23 @@ assert_file_with_write_access() {
     fi
 }
 
+# Shows notification depending on exit status given as an argument.
+show_notification() {
+    # Assert exit status was given.
+    [[ $# -eq 0 ]] && { error 'No arguments given'; }
+    [[ $# -gt 2 ]] && { error 'Too many arguments'; }
+
+    # If last exit status equal zero, show success notification,
+    # otherwise show failure.
+    if [[ $2 -eq 0 ]]; then
+        eval "${notification_success}"
+    else
+        eval "${notification_error}"
+    fi
+}
+
 # Handles parameters, sets all the variables.
-while getopts ":ho:e:" opt; do
+while getopts ":ho:e:n" opt; do
     case "$opt" in
     h)
         usage
@@ -81,6 +102,9 @@ while getopts ":ho:e:" opt; do
     e)
         STDERR_REDIRECTION_PATH="$OPTARG"
         assert_file_with_write_access "$STDERR_REDIRECTION_PATH"
+        ;;
+    n)
+        show_notifications=1
         ;;
     :)
         error "Option -${OPTARG} is missing an argument"
@@ -98,13 +122,44 @@ shift $(( OPTIND - 1 ))
 [[ $# -eq 0 ]] && { error 'Please, provide a command to use'; }
 [[ $# -gt 1 ]] && { error 'Too many arguments'; }
 
+# If show notification flag is present, set the variables.
+if [[ "$show_notifications" -eq 1 ]]; then
+    if [[ `uname` == 'Darwin' ]]; then
+        # Mac OS.
+        notification_success="osascript -e 'display notification \"Command: ${1}\" with title \"Script finished running\"'"
+        notification_error="osascript -e 'display notification \"Command: ${1}\" with title \"Script failed\"'"
+    elif ps -e | grep -Eq 'unity-panel' || ps -e | grep -Eq '^.* gnome-session$'; then
+        # Unity / Gnome.
+        notification_success='notify-send -i terminal -u normal -- "Script finished running" "Command: ${1}"'
+        notification_error='notify-send -i error -u normal -- "Script failed" "Command: \`${1}\`"'
+    elif ps -e | grep -Eq '^.* kded4$'; then
+        # KDE.
+        notification_success='kdialog --passivepopup "Script finished running: \`${1]\`"'
+        notification_error='kdialog --passivepopup "Script failed: \`${1]\`"'
+    else
+        # Hopefully will be available.
+        notification_success='notify-send -i terminal -u normal -- "Script finished running" "Command: ${1}"'
+        notification_error='notify-send -i error -u normal -- "Script failed" "Command: \`${1}\`"'
+    fi
+fi
+
 # Do not redirect both streams to the same file using >> and 2>>,
 # cause one will overwrite the other and whole thing becomes a race
 # condition.
 if [[ "$STDOUT_REDIRECTION_PATH" == "$STDERR_REDIRECTION_PATH" ]]; then
-    nohup nice "$1" < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>&1 &
+    if [[ "$show_notifications" -eq 1 ]]; then
+        # Do not quote the $1 given to `nice` command. Bash will then
+        # Take the $1 argument as a string and try to run it as a whole.
+        nohup nice $1 < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>&1; show_notification "$1" $? &
+    else
+        nohup nice $1 < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>&1 &
+    fi
 else
-    nohup nice "$1" < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>> "$STDERR_REDIRECTION_PATH" &
+    if [[ "$show_notifications" -eq 1 ]]; then
+        nohup nice $1 < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>> "$STDERR_REDIRECTION_PATH"; show_notification "$1" $? &
+    else
+        nohup nice $1 < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>> "$STDERR_REDIRECTION_PATH" &
+    fi
 fi
 
 # Success.
