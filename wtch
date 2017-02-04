@@ -28,8 +28,7 @@ usage() {
     cat <<EOF
 wtch [FILE]
 wtch [FILE] [PATTERN]
-Watches file for changes and outputs anything new
-to the stdout. Pattern can be any
+Watches file for changes and outputs anything new to the stdout. Pattern can be any POSIX extended regex string.
 EOF
 }
 
