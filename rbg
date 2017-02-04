@@ -1,6 +1,111 @@
 #!/usr/bin/env bash
 
+# Run given command in the background, ignore SIGHUP's.
+# Example usage:
+#
+# rbg 'some_kind_of_server'     ~~ Runs the server in the background and silences
+#                                  its output.
+#
+# rbg 'long_running_command' -o /home/:user:/out.log -e /home/:user:/err.log
+#
+# Above example will run `long running command` in the background and save
+# its output to '/home/:user:/out.log'. Will also save error log to:
+# '/home/:user:/err.log'.
+#
+# rbg firefox                   ~~ Will run firefox in the background, giving you
+#                                  control of the terminal back, also will silence
+#                                  any firefox terminal output.
+
+# Where to redirect stdout and stderr.
+declare STDOUT_REDIRECTION_PATH='/dev/null'
+declare STDERR_REDIRECTION_PATH='/dev/null'
+
+# Shows usage information.
+usage() {
+    cat <<EOF
+rbg [OPTIONS] [COMMAND]
+Runs command in the background, ignore SIGHUP's.
+        -o [FILE]: Redirect stdout to the file provided
+        -e [FILE]: Redirect stderr to the file provided
+        -h: Show this help message
+EOF
+}
+
+# Stops script execution. Prints given error
+# message and exits with given exit code (default 1).
+#
+# $1 - Error message
+# $2 - Exit code
+error() {
+    echo "Error: ${1:-"Unknown error"}"
+    usage
+    exit ${2:-1}
+} >&2
+
+# Asserts given argument is a file with write access or
+# a path to not yet created file with write access.
+assert_file_with_write_access() {
+    # Make sure one argument is passed.
+    [[ $# -eq 0 ]] && { error 'No arguments given'; }
+    [[ $# -gt 1 ]] && { error 'Too many arguments'; }
+
+    # If path is a regular file, check its write access.
+    if [[ -f "$1" ]]; then
+        [[ ! -w "$1" ]] && { error "No write rights to file: '${1}'"; }
+    elif [[ -d "$1" ]]; then
+        # Path is a directory, therefore we cannot save anything there
+        # and must throw an error.
+        error "Path: ${1} is a directory"
+    else
+        # If path does not exist, create it and check its write access.
+        folder_path="${1%/*}"
+        if ! mkdir -p "$folder_path"; then
+            error "Cannot create folder: ${folder_path}"
+        else
+            [[ ! -w "$folder_path" ]] && { error "Cannot write to: ${folder_path}"; }
+        fi
+    fi
+}
+
+# Handles parameters, sets all the variables.
+while getopts ":ho:e:" opt; do
+    case "$opt" in
+    h)
+        usage
+        exit 0
+        ;;
+    o)
+        STDOUT_REDIRECTION_PATH="$OPTARG"
+        assert_file_with_write_access "$STDOUT_REDIRECTION_PATH"
+        ;;
+    e)
+        STDERR_REDIRECTION_PATH="$OPTARG"
+        assert_file_with_write_access "$STDERR_REDIRECTION_PATH"
+        ;;
+    :)
+        error "Option -${OPTARG} is missing an argument"
+        ;;
+    \?)
+        error "Unknown option: -${OPTARG}"
+        ;;
+    esac
+done
+
+# Skip handled parameters.
+shift $(( OPTIND - 1 ))
+
+# Make sure arguments are fine.
+[[ $# -eq 0 ]] && { error 'Please, provide a command to use'; }
+[[ $# -gt 1 ]] && { error 'Too many arguments'; }
+
+# Do not redirect both streams to the same file using >> and 2>>,
+# cause one will overwrite the other and whole thing becomes a race
+# condition.
+if [[ "$STDOUT_REDIRECTION_PATH" == "$STDERR_REDIRECTION_PATH" ]]; then
+    nohup nice "$1" < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>&1 &
+else
+    nohup nice "$1" < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>> "$STDERR_REDIRECTION_PATH" &
+fi
+
+# Success.
 exit 0
-nohup nice $1 < /dev/null > /dev/null 2>&1
-nohup nice $1 < /dev/null > $2 2>&1
-nohup nice $1 < /dev/null > $2 2> $3
