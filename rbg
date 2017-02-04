@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+exit 0
+nohup nice $1 < /dev/null > /dev/null 2>&1
+nohup nice $1 < /dev/null > $2 2>&1
+nohup nice $1 < /dev/null > $2 2> $3

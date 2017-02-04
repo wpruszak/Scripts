@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# Return 1 on pipe failure.
+set -o pipefail
+
+# Shows usage information.
+usage() {
+    cat <<EOF
+wtch [FILE]
+wtch [PATTERN] [FILE]
+Watches file for changes and outputs anything new
+to the stdout.
+EOF
+}
+
+# Stops script execution. Prints given error
+# message and exits with given exit code (default 1).
+#
+# $1 - Error message
+# $2 - Exit code
+error() {
+    echo "Error: ${1:-"Unknown error"}"
+    usage
+    exit ${2:-1}
+} >&2
+
+# Maximum of two arguments allowed - pattern and file.
+[[ $# -gt 2 ]] && { error 'Too many arguments'; }
+
+# Pattern and file provided.
+[[ $# -eq 2 ]] && {
+
+}
