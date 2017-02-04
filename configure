@@ -64,7 +64,7 @@ for file in `ls "$DIR"`; do
         fi
 
         # Remove previous link, and create a new one.
-        unlink "${BIN_DIR}/${file}" > /dev/null 2>&1;
+        unlink "${BIN_DIR}/${file}" > /dev/null 2>&1
 
         # Link the script.
         if ! ln -s "${DIR}/${file}" "${BIN_DIR}/${file}" > /dev/null 2>&1; then
