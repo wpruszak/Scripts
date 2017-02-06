@@ -151,15 +151,15 @@ if [[ "$STDOUT_REDIRECTION_PATH" == "$STDERR_REDIRECTION_PATH" ]]; then
     if [[ "$show_notifications" -eq 1 ]]; then
         # Do not quote the $1 given to `nice` command. Bash will then
         # Take the $1 argument as a string and try to run it as a whole.
-        nohup nice $1 < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>&1; show_notification "$1" $? &
+        nohup nice bash -c "eval '$1'" < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>&1; show_notification "$1" $? &
     else
-        nohup nice $1 < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>&1 &
+        nohup nice bash -c "eval '$1'" < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>&1 &
     fi
 else
     if [[ "$show_notifications" -eq 1 ]]; then
-        nohup nice $1 < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>> "$STDERR_REDIRECTION_PATH"; show_notification "$1" $? &
+        nohup nice bash -c "eval '$1'" < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>> "$STDERR_REDIRECTION_PATH"; show_notification "$1" $? &
     else
-        nohup nice $1 < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>> "$STDERR_REDIRECTION_PATH" &
+        nohup nice bash -c "eval '$1'" < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>> "$STDERR_REDIRECTION_PATH" &
     fi
 fi
 
