@@ -100,10 +100,10 @@ assert_signal() {
     # and send them a SIGTERM signal.
     # kill ~~ sends SIGTERM to all found processes
     # ps ax ~~ lists all processes
-    # grep "$1" ~~ in this case $1 is the process name, therefore this will
+    # grep -- "$1" ~~ in this case $1 is the process name, therefore this will
     # look for all processes with name matching the one provided
     # > /dev/null 2>&1 ~~ explained above
-    kill `ps ax | grep "$1" | grep -vE 'grep|nkill' | awk '{ print $1 }'` > /dev/null 2>&1
+    kill `ps ax | grep -- "$1" | grep -vE 'grep|nkill' | awk '{ print $1 }'` > /dev/null 2>&1
 
     # Make sure nothing wrong happened.
     assert_kill_succeeded $?
@@ -118,7 +118,7 @@ assert_signal() {
         upper_case_signal=`echo "$1" | tr '[:lower:]' '[:upper:]'`
         # kill "-${upper_case_signal}" ~~ sends given signal to all found processes
         # Rest of this is explained above.
-        kill "-${upper_case_signal}" `ps ax | grep "$2" | grep -vE 'grep|nkill' | awk '{ print $1 }'` > /dev/null 2>&1
+        kill "-${upper_case_signal}" `ps ax | grep -- "$2" | grep -vE 'grep|nkill' | awk '{ print $1 }'` > /dev/null 2>&1
 
         # Make sure nothing wrong happened.
         assert_kill_succeeded $?
