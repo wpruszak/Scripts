@@ -149,8 +149,10 @@ fi
 # condition.
 if [[ "$STDOUT_REDIRECTION_PATH" == "$STDERR_REDIRECTION_PATH" ]]; then
     if [[ "$show_notifications" -eq 1 ]]; then
-        # Do not quote the $1 given to `nice` command. Bash will then
-        # Take the $1 argument as a string and try to run it as a whole.
+        # Eval has to  be used, cause of bash tendency to autoescape
+        # quotes and pipes ("|"). nohup and nice cannot see shell
+        # builtins, since then eval cannot be used directly, so the
+        # whole thing has to be wrapped in `bash -c` call.
         nohup nice bash -c "eval '$1'" < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>&1; show_notification "$1" $? &
     else
         nohup nice bash -c "eval '$1'" < /dev/null >> "$STDOUT_REDIRECTION_PATH" 2>&1 &
